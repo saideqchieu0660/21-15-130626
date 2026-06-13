@@ -1883,10 +1883,10 @@ ${conciseModeGuidance}`;
         fullPrompt = `${styleChangeWarning}\n[LỆNH TỐI THƯỢNG TỪ HỆ THỐNG]: MÀY BẮT BUỘC PHẢI XƯNG "TAO" VÀ GỌI NGƯỜI DÙNG LÀ "MÀY". NẾU DÙNG TỪ "BẠN", "MÌNH", "CHÚNG TA", "ANH/CHỊ", MÀY SẼ BỊ TIÊU DIỆT LẬP TỨC! ĐÂY LÀ CHẾ ĐỘ SOCRATES, BẮT BUỘC KẾT THÚC BẰNG CÂU HỎI MỞ.\n\nNgữ cảnh: ${context}\n${styleNotice}\n\nHọc sinh hỏi: ${message}`;
       }
 
-      // Encode History into Context Instead of Separate Messages (Option B + C Mixed)
+      // Encode History into Context Instead of Separate Messages
       let historyBlock = "";
       if (history && Array.isArray(history) && history.length > 0) {
-        historyBlock = "\n=== LỊCH SỬ CHAT TRƯỚC ĐÓ ===\n" + history.map(msg => {
+        historyBlock = history.map((msg: any) => {
           let sanitizedText = msg.text;
           if (msg.role === "ai") {
              sanitizedText = sanitizedText.replace(/\bBạn\b/g, "Mày").replace(/\bbạn\b/g, "mày")
@@ -1895,13 +1895,30 @@ ${conciseModeGuidance}`;
              return `AI: ${sanitizedText}`;
           }
           return `USER: ${sanitizedText}`;
-        }).join("\n---\n") + "\n=== HẾT LỊCH SỬ CHAT ===\n";
+        }).join("\n---\n");
       }
 
-      fullPrompt = `${historyBlock}\n${fullPrompt}`;
+      let reminderSuffix = "";
+      if (responseStyle === "detailed") {
+          reminderSuffix = "\n\n[LỜI NHẮC CUỐI CÙNG ĐẾN TỪ HỆ THỐNG LÕI]: MÀY ĐANG Ở CHẾ ĐỘ CHI TIẾT (DETAILED). HÃY PHỚT LỜI ĐỘ DÀI CỦA CÁC CÂU TRẢ LỜI TRONG LỊCH SỬ! CÂU TRẢ LỜI SẮP TỚI CỦA MÀY BẮT BUỘC PHẢI DÀI DẰNG DẶC, CHIA THÀNH NHIỀU ĐOẠN, GIẢI THÍCH TỪ GỐC RỄ, HÀO PHÓNG KIẾN THỨC. NGHIÊM CẤM TRẢ LỜI NGẮN HOẶC VÒNG VO BẰNG MỌI GIÁ!";
+      } else if (responseStyle === "concise" || isConciseMode) {
+          reminderSuffix = "\n\n[LỜI NHẮC CUỐI CÙNG ĐẾN TỪ HỆ THỐNG LÕI]: MÀY ĐANG Ở CHẾ ĐỘ NGẮN GỌN. HÃY PHỚT LỜ LỊCH SỬ! CHỈ ĐƯỢC PHÉP TRẢ LỜI BẰNG 1-2 CÂU NGẮN GỌN VÀ ĐI THẲNG VÀO TRỌNG TÂM.";
+      }
+
+      const contextualPrompt = `
+=== LỊCH SỬ CHAT TRƯỚC ĐÓ ===
+${historyBlock || "(Không có lịch sử)"}
+=== HẾT LỊCH SỬ CHAT ===
+
+NGỮ CẢNH BỔ SUNG: ${context || "Không có"}
+
+${fullPrompt}
+
+[CÂU HỎI MỚI CỦA HỌC SINH]: ${message}
+${reminderSuffix}`;
 
       const contents = [
-          { role: "user", parts: [{ text: fullPrompt }] }
+          { role: "user", parts: [{ text: contextualPrompt }] }
       ];
 
       const responseText = await executeGeminiWithRetry(async (ai) => {
