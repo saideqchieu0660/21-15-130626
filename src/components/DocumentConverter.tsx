@@ -2680,7 +2680,7 @@ Hoặc dán toàn bộ đoạn văn bài đọc IELTS/TOEFL vào đây. AI sẽ 
                      if (!acc[subj]) acc[subj] = [];
                      acc[subj].push(deck);
                      return acc;
-                   }, {} as Record<string, typeof decks>)).map(([subject, subjectDecks]) => (
+                   }, {} as Record<string, any[]>)).map(([subject, subjectDecks]) => (
                      <optgroup key={subject} label={`📂 ${subject} (${subjectDecks.length} bộ)`}>
                        {subjectDecks.map((d) => (
                          <option key={d.id} value={d.id}>

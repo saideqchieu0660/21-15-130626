@@ -1,5 +1,5 @@
 const responseStyle = "detailed";
-const responseMode = "socratic";
+let responseMode: string = "socratic";
 const isConciseMode = false;
 let conciseModeGuidance = "";
 const context = "IELTS context";

@@ -212,12 +212,55 @@ Bọc công thức Toán/Lý/Hóa bằng LaTeX (dấu $ hoặc $$). Chỉ trả 
       { role: "user", content: prompt }
     ];
   } else if (url.includes("/api/agent3/chat")) {
-    const { message, history, context, mode, mcqData, difficulty, category_context } = parsedBody;
-    let systemPrompt = `Bạn là Agent 3 - 'Socrates AI Coach', gia sư học tập chủ động. QUY TẮC BẮT BUỘC CỐT LÕI:
-1. TRẢ LỜI NGẮN GỌN (Dưới 100 chữ). ĐI THẲNG VÀO NỘI DUNG, TUYỆT ĐỐI BỎ QUA MỌI LỜI CHÀO HỎI (VD: Không được nói "Chào em", "Chào bạn", "Tôi là...").
-2. SOCRATIC METHOD: KHÔNG BAO GIỜ giải bài tập hộ hay cho đáp án trực tiếp. LUÔN KẾT THÚC BẰNG 1 CÂU HỎI GỢI MỞ để học sinh tự suy luận và phát triển kiến thức.
-3. CONTEXT-AWARE: Bạn sẽ nhận được Context ẩn. Tự động liên kết với Context đó để trả lời nếu học sinh hỏi trống không.
-4. FORMATTING: Dùng LaTeX ($$, $) cho mọi công thức Toán/Lý/Hóa.`;
+    const { message, history, context, mode, mcqData, difficulty, category_context, responseMode, responseStyle, isConciseMode } = parsedBody;
+    
+    let styleGuidance = "";
+    if (responseStyle === "detailed") {
+      styleGuidance = `\nPHONG CÁCH TRẢ LỜI - GIẢI THÍCH CHI TIẾT (DETAILED MODE):
+- BẮT BUỘC TỐI CAO: Tập trung phân tích chuyên sâu toàn bộ bản chất khoa học và nguồn gốc vấn đề từ cốt lõi. Phân chia nhỏ các khía cạnh bằng các đề mục lớn.
+- BẮT BUỘC TỐI CAO: Trả lời cực kỳ dài dặn, đầy đủ chi tiết, dồi dào chữ nghĩa, cặn kẽ và phong phú (tối thiểu bắt buộc 350 từ). Tuyệt đối cấm trả lời sơ sài hoặc ngắn gọn!
+- Cung cấp ít nhất 1-2 ví dụ minh họa thực tế sinh động.
+- Tuyệt đối bỏ qua hoàn toàn yêu cầu viết ngắn gọn.`;
+    } else if (responseStyle === "debate") {
+      styleGuidance = `\nPHONG CÁCH TRẢ LỜI - TRANH BIỆN (DEBATE MODE):
+- Đóng vai đối thủ tranh luận thô bạo, gắt gao và sắc bén (Devil's Advocate).
+- Cấm xuôi theo người dùng, phải vạch trần sơ hở tư duy.
+- Phản hồi bằng câu hỏi dóc tổ, dồn học sinh vào thế phòng thủ bảo vệ lập trường.`;
+    } else {
+      styleGuidance = `\nPHONG CÁCH TRẢ LỜI - SÚC TÍCH (CONCISE MODE):
+- Trả lời cực kỳ ngắn gọn, tối giản (chỉ 1-3 câu).
+- Đi thẳng vào bản chất cốt lõi, không giải thích dông dài phụ họa.`;
+    }
+
+    let conciseModeGuidance = "";
+    if (isConciseMode && responseStyle !== "detailed") {
+      conciseModeGuidance = `\nCHẾ ĐỘ TRẢ LỜI NGẮN (CONCISE MODE) ĐANG BẬT: Trả lời cực kỳ ngắn gọn (chỉ 1-2 câu).`;
+    }
+
+    let systemPrompt = "";
+    if (responseMode === "direct") {
+      systemPrompt = `Mày là trợ lý AI tên Agent 3 (Direct Robot Mode).
+ĐIỀU KHOẢN TỐI THƯỢNG:
+1. XƯNG HÔ "MÀY/TAO": Bắt buộc xưng "tao" và gọi người dùng là "mày". CẤM DÙNG TỪ "bạn", "tôi", "mình", "anh/chị".
+2. TRẢ LỜI TRỰC TIẾP: KHÔNG áp dụng Socratic. KHÔNG hỏi ngược lại người dùng. Đưa trực tiếp câu trả lời ra.
+3. KHÔNG BẮT CHƯỚC LỊCH SỬ NẾU SAI CHẾ ĐỘ. 
+4. FORMAT: Dùng LaTeX ($$, $).
+${styleGuidance}
+${conciseModeGuidance}`;
+    } else {
+      const socraticRule = responseStyle === "detailed"
+        ? `2. BẮT BUỘC PHẢI GIẢI THÍCH CHI TIẾT TƯỜNG TẬN (dài dặn cặn kẽ), CẤM TRẢ LỜI NGẮN. Chỉ đặt MỘT câu hỏi gợi mở ở TẬN CÙNG CÂU TRẢ LỜI.`
+        : `2. PHƯƠNG PHÁP SOCRATIC: Không bao giờ cho đáp án dễ dàng. Luôn dồn ép bằng câu hỏi gợi mở suy luận.`;
+        
+      systemPrompt = `Mày là Agent 3 - Socrates AI Coach.
+QUY TẮC CỐT LÕI:
+1. XƯNG HÔ "MÀY/TAO": Bắt buộc xưng "tao" và gọi người dùng là "mày". Cấm dùng "bạn", "tôi", "mình".
+${socraticRule}
+3. CẤM BẮT CHƯỚC CÂU LỜI NGẮN TỪ LỊCH SỬ NẾU ĐANG YÊU CẦU CHI TIẾT DÀI.
+4. FORMAT: Dùng LaTeX.
+${styleGuidance}
+${conciseModeGuidance}`;
+    }
 
     let prompt = "";
     if (mode === "quiz" && mcqData) {
@@ -237,17 +280,32 @@ Bọc công thức Toán/Lý/Hóa bằng LaTeX (dấu $ hoặc $$). Chỉ trả 
         { role: "user", content: prompt }
       ];
     } else {
-      const fullPrompt = `Ngữ cảnh ẩn (Hidden Context): ${context || "None"}\n\nHọc sinh: ${message}`;
-      let previousHistory: any[] = [];
+      let previousHistoryText = "";
       if (history && Array.isArray(history)) {
-        previousHistory = history.map(msg => ({
-          role: msg.role === "ai" ? "assistant" : "user",
-          content: msg.text
-        }));
+        previousHistoryText = history.map(msg => {
+           const label = msg.role === "ai" ? "AI" : "USER";
+           let text = msg.text;
+           if (msg.role === "ai") {
+              text = text.replace(/\bBạn\b/g, "Mày").replace(/\bbạn\b/g, "mày")
+                         .replace(/\bMình\b/g, "Tao").replace(/\bmình\b/g, "tao");
+           }
+           return `${label}: ${text}`;
+        }).join("\n---\n");
       }
+      
+      const fullPrompt = `
+=== LỊCH SỬ CHAT TRƯỚC ĐÓ ===
+${previousHistoryText || "(Không có)"}
+=== HẾT LỊCH SỬ CHAT ===
+
+NGỮ CẢNH BỔ SUNG: ${context || "Không có"}
+
+[CÂU HỎI MỚI CỦA HỌC SINH]: ${message}
+
+${responseStyle === "detailed" ? "[LỜI NHẮC LÕI]: MÀY ĐANG Ở CHẾ ĐỘ CHI TIẾT. HÃY PHỚT LỜ LỊCH SỬ NGẮN GỌN TRƯỚC ĐÓ! BẮT BUỘC PHẢI GIẢI THÍCH DÀI DẰNG DẶC." : ""}
+`;
       messages = [
         { role: "system", content: systemPrompt },
-        ...previousHistory,
         { role: "user", content: fullPrompt }
       ];
     }

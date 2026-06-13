@@ -1752,7 +1752,7 @@ Acknowledge this protocol. Execute all text transformations deterministically at
                     acc[subj].push(deck);
                     return acc;
                   },
-                  {} as Record<string, typeof decks>,
+                  {} as Record<string, any[]>,
                 ),
               ).map(([subject, subjectDecks]) => (
                 <optgroup
@@ -2898,7 +2898,7 @@ Acknowledge this protocol. Execute all text transformations deterministically at
                         acc[subj].push(deck);
                         return acc;
                       },
-                      {} as Record<string, typeof decks>,
+                      {} as Record<string, any[]>,
                     ),
                   ).map(([subject, subjectDecks]) => (
                     <optgroup
