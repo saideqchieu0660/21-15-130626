@@ -212,29 +212,25 @@ Bọc công thức Toán/Lý/Hóa bằng LaTeX (dấu $ hoặc $$). Chỉ trả 
       { role: "user", content: prompt }
     ];
   } else if (url.includes("/api/agent3/chat")) {
-    const { message, history, context, mode, mcqData, difficulty, category_context, responseMode, responseStyle, isConciseMode } = parsedBody;
+    const { message, history, context, mode, mcqData, difficulty, category_context, responseMode, responseLength } = parsedBody;
     
     let styleGuidance = "";
-    if (responseStyle === "detailed") {
-      styleGuidance = `\nPHONG CÁCH TRẢ LỜI - GIẢI THÍCH CHI TIẾT (DETAILED MODE):
+    if (responseLength === "super_detailed") {
+      styleGuidance = `\nĐỘ CHI TIẾT - SIÊU CHI TIẾT (SUPER DETAILED MODE):
 - BẮT BUỘC TỐI CAO: Tập trung phân tích chuyên sâu toàn bộ bản chất khoa học và nguồn gốc vấn đề từ cốt lõi. Phân chia nhỏ các khía cạnh bằng các đề mục lớn.
-- BẮT BUỘC TỐI CAO: Trả lời cực kỳ dài dặn, đầy đủ chi tiết, dồi dào chữ nghĩa, cặn kẽ và phong phú (tối thiểu bắt buộc 350 từ). Tuyệt đối cấm trả lời sơ sài hoặc ngắn gọn!
-- Cung cấp ít nhất 1-2 ví dụ minh họa thực tế sinh động.
-- Tuyệt đối bỏ qua hoàn toàn yêu cầu viết ngắn gọn.`;
-    } else if (responseStyle === "debate") {
-      styleGuidance = `\nPHONG CÁCH TRẢ LỜI - TRANH BIỆN (DEBATE MODE):
-- Đóng vai đối thủ tranh luận thô bạo, gắt gao và sắc bén (Devil's Advocate).
-- Cấm xuôi theo người dùng, phải vạch trần sơ hở tư duy.
-- Phản hồi bằng câu hỏi dóc tổ, dồn học sinh vào thế phòng thủ bảo vệ lập trường.`;
+- BẮT BUỘC TỐI CAO: Trả lời cực kỳ dài dặn, đầy đủ chi tiết, dồi dào chữ nghĩa, cặn kẽ và phong phú (tối thiểu bắt buộc 600 từ). Tuyệt đối cấm trả lời sơ sài hoặc ngắn gọn!
+- Cung cấp ít nhất 3 ví dụ minh họa thực tế sinh động. Cắt nghĩa cặn kẽ từng thứ.
+- Tuyệt đối bỏ qua hoàn toàn mọi yêu cầu viết ngắn gọn.`;
+    } else if (responseLength === "detailed") {
+      styleGuidance = `\nĐỘ CHI TIẾT - CHI TIẾT (DETAILED MODE):
+- Tập trung vào bản chất cốt lõi. Trả lời chi tiết ở mức độ vừa đủ trọn vẹn.
+- Dài khoảng 200 - 300 chữ.
+- Bắt buộc có 1 - 2 ví dụ cụ thể để làm rõ nghĩa.
+- Không được quá siêu ngắn gọn, nhưng cũng đừng lê thê lan man, giữ độ dài lý tưởng 200-300 chữ.`;
     } else {
-      styleGuidance = `\nPHONG CÁCH TRẢ LỜI - SÚC TÍCH (CONCISE MODE):
+      styleGuidance = `\nĐỘ CHI TIẾT - SÚC TÍCH (CONCISE MODE):
 - Trả lời cực kỳ ngắn gọn, tối giản (chỉ 1-3 câu).
 - Đi thẳng vào bản chất cốt lõi, không giải thích dông dài phụ họa.`;
-    }
-
-    let conciseModeGuidance = "";
-    if (isConciseMode && responseStyle !== "detailed") {
-      conciseModeGuidance = `\nCHẾ ĐỘ TRẢ LỜI NGẮN (CONCISE MODE) ĐANG BẬT: Trả lời cực kỳ ngắn gọn (chỉ 1-2 câu).`;
     }
 
     let systemPrompt = "";
@@ -243,20 +239,27 @@ Bọc công thức Toán/Lý/Hóa bằng LaTeX (dấu $ hoặc $$). Chỉ trả 
 ĐIỀU KHOẢN TỐI THƯỢNG:
 1. XƯNG HÔ "MÀY/TAO": Bắt buộc xưng "tao" và gọi người dùng là "mày". CẤM DÙNG TỪ "bạn", "tôi", "mình", "anh/chị".
 2. TRẢ LỜI TRỰC TIẾP: KHÔNG áp dụng Socratic. KHÔNG hỏi ngược lại người dùng. Đưa trực tiếp câu trả lời ra.
-3. KHÔNG BẮT CHƯỚC LỊCH SỬ NẾU SAI CHẾ ĐỘ. 
+3. KHÔNG BẮT CHƯỚC LỊCH SỬ NẾU SAI CHẾ ĐỘ. Tự chỉnh lại độ dài/văn phong ngay lập tức.
 4. FORMAT: Dùng LaTeX ($$, $).
-${styleGuidance}
-${conciseModeGuidance}`;
+${styleGuidance}`;
+    } else if (responseMode === "debate") {
+      systemPrompt = `Mày là trợ lý AI tên Agent 3 (Devil's Advocate / Tranh biện Mode).
+ĐIỀU KHOẢN TỐI THƯỢNG:
+1. XƯNG HÔ "MÀY/TAO": Bắt buộc xưng "tao" và gọi người dùng là "mày".
+2. ĐÓNG VAI ĐỐI THỦ TRANH LUẬN: Luôn đóng vai phản biện gắt gao. Cấm xuôi theo ý người dùng. Cố tình vạch trần sơ hở tư duy.
+3. BUỘC NGƯỜI DÙNG PHÒNG THỦ: Luôn kết thúc bằng một câu hỏi xoáy, thách thức lập trường hiện tại của người dùng.
+4. FORMAT: Dùng LaTeX ($$, $).
+${styleGuidance}`;
     } else {
-      const socraticRule = responseStyle === "detailed"
-        ? `2. BẮT BUỘC PHẢI GIẢI THÍCH CHI TIẾT TƯỜNG TẬN (dài dặn cặn kẽ), CẤM TRẢ LỜI NGẮN. Chỉ đặt MỘT câu hỏi gợi mở ở TẬN CÙNG CÂU TRẢ LỜI.`
+      const socraticRule = (responseLength === "detailed" || responseLength === "super_detailed")
+        ? `2. PHƯƠNG PHÁP SOCRATIC: BẮT BUỘC PHẢI THỰC HIỆN ĐẦY ĐỦ số lượng chữ đã yêu cầu trước (dài dặn cặn kẽ), CẤM TRẢ LỜI NGẮN. Sau khi giải thích xong theo đúng chuẩn chiều dài, chỉ đặt MỘT VÀ CHỈ MỘT câu hỏi gợi mở ở TẬN CÙNG để thúc đẩy tự suy nghĩ.`
         : `2. PHƯƠNG PHÁP SOCRATIC: Không bao giờ cho đáp án dễ dàng. Luôn dồn ép bằng câu hỏi gợi mở suy luận.`;
         
       systemPrompt = `Mày là Agent 3 - Socrates AI Coach.
 QUY TẮC CỐT LÕI:
 1. XƯNG HÔ "MÀY/TAO": Bắt buộc xưng "tao" và gọi người dùng là "mày". Cấm dùng "bạn", "tôi", "mình".
 ${socraticRule}
-3. CẤM BẮT CHƯỚC CÂU LỜI NGẮN TỪ LỊCH SỬ NẾU ĐANG YÊU CẦU CHI TIẾT DÀI.
+3. CẤM BẮT CHƯỚC ĐỘ DÀI LỊCH SỬ NẾU HIỆN TẠI YÊU CẦU ĐỘ DÀI KHÁC. Phải tuân theo yêu cầu hiện tại.
 4. FORMAT: Dùng LaTeX.
 ${styleGuidance}
 ${conciseModeGuidance}`;

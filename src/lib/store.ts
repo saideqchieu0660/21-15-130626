@@ -20,6 +20,8 @@ export interface User {
   
   doubleXPUntil?: number; // Timestamp for when the double XP ends
   hideRankUntil?: number; // Timestamp for when the anonymous rank mask ends
+  argusEyesUntil?: number; // Timestamp for unlimited Detailed Mode
+  achillesUntil?: number; // Timestamp for Achilles High Risk 3x XP multiplier
   
   // Profile UI Upgrades (Optional Fallbacks)
   level?: number;
@@ -802,6 +804,24 @@ export const store = {
     }
     return false;
   },
+  buyArgusEyes: (price: number = 300) => {
+    if (currentUser && currentUser.points >= price) {
+      currentUser.points -= price;
+      currentUser.argusEyesUntil = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+      syncUserToFirebase();
+      return true;
+    }
+    return false;
+  },
+  buyAchilles: (price: number = 400) => {
+    if (currentUser && currentUser.points >= price) {
+      currentUser.points -= price;
+      currentUser.achillesUntil = Date.now() + 2 * 60 * 60 * 1000; // 2 hours
+      syncUserToFirebase();
+      return true;
+    }
+    return false;
+  },
   buyAdminRole: (price: number = 99999999999) => {
     if (currentUser && currentUser.points >= price) {
       currentUser.points -= price;
@@ -814,7 +834,11 @@ export const store = {
   addBonusPoints: (points: number) => {
     if (currentUser) {
         const isDoubleXP = currentUser.doubleXPUntil && currentUser.doubleXPUntil > Date.now();
-        currentUser.points += isDoubleXP ? points * 2 : points;
+        const isAchilles = currentUser.achillesUntil && currentUser.achillesUntil > Date.now();
+        let multiplier = 1;
+        if (isAchilles) multiplier = 3;
+        else if (isDoubleXP) multiplier = 2;
+        currentUser.points += points * multiplier;
         syncUserToFirebase();
     }
   },
@@ -852,13 +876,24 @@ export const store = {
          card.isHard = false;
          if (currentUser) {
              const isDoubleXP = currentUser.doubleXPUntil && currentUser.doubleXPUntil > Date.now();
-             currentUser.points += isDoubleXP ? 2 : 1;
+             const isAchilles = currentUser.achillesUntil && currentUser.achillesUntil > Date.now();
+             let multiplier = 1;
+             if (isAchilles) multiplier = 3;
+             else if (isDoubleXP) multiplier = 2;
+             currentUser.points += multiplier;
          }
      } else {
          rep = 0;
          inter = 1;
          card.mastery = Math.max(0, card.mastery - 20);
          card.isHard = true;
+         if (currentUser && currentUser.achillesUntil && currentUser.achillesUntil > Date.now()) {
+             if (currentUser.streak && currentUser.streak > 1) {
+                 currentUser.streak = 1;
+             } else if (currentUser.level && currentUser.level > 1) {
+                 currentUser.level -= 1;
+             }
+         }
      }
 
      ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));

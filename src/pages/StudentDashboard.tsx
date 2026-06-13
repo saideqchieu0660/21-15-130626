@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { store, Deck, saveLocalUserDecks } from "../lib/store";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Plus, X, Play, TrendingUp, Users, Target, BookOpen, BrainCircuit, Activity, Flame, ArrowLeft, CheckCircle2, XCircle, ArrowRight, Loader2, Trophy, Sparkles, Maximize2, Minimize2, Bell, BellOff, BellRing, Settings, AlertTriangle, Trash2, Snowflake, Volume2, VolumeX, Clock, Network, Award, Bot, User, Crown, ChevronUp, ChevronDown, Minus, Shield, RefreshCw, Heart, LogOut, Bug, Type, Library, Camera, Edit3, HelpCircle, Cpu, ShoppingBag, Lock, Zap, Ghost, ShieldAlert } from "lucide-react";
+import { Plus, X, Play, TrendingUp, Users, Target, BookOpen, BrainCircuit, Activity, Flame, ArrowLeft, CheckCircle2, XCircle, ArrowRight, Loader2, Trophy, Sparkles, Maximize2, Minimize2, Bell, BellOff, BellRing, Settings, AlertTriangle, Trash2, Snowflake, Volume2, VolumeX, Clock, Network, Award, Bot, User, Crown, ChevronUp, ChevronDown, Minus, Shield, RefreshCw, Heart, LogOut, Bug, Type, Library, Camera, Edit3, HelpCircle, Cpu, ShoppingBag, Lock, Zap, Ghost, ShieldAlert, Eye } from "lucide-react";
 import { MarcusAureliusIcon } from "../components/MarcusAureliusIcon";
 import { cn } from "../lib/utils";
 import { safeRequest } from "../utils/apiClient";
@@ -246,6 +246,7 @@ export default function StudentDashboard() {
   const [showTutorial, setShowTutorial] = useState(false);
   
   const [activeTab, setActiveTab] = useState<"study" | "ranking" | "quiz" | "mock_exam_setup" | "settings" | "history" | "skill_tree" | "all_sets" | "groups" | "achievements" | "profile" | "create_deck" | "cyberpunk" | "shop">("study");
+  const [selectedShopItem, setSelectedShopItem] = useState<{name: string; icon: any; iconColor: string; title: string; cost: number; desc: string; lore: string; actionText: string; bgEffect: string; onBuy: () => void} | null>(null);
   const [profileNameInput, setProfileNameInput] = useState("");
   const [isEditingProfileName, setIsEditingProfileName] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -2961,6 +2962,96 @@ export default function StudentDashboard() {
               </div>
             </div>
 
+            {/* Hệ AI Cheat Code: Đôi Mắt Của Argus */}
+            <div 
+              onClick={() => setSelectedShopItem({
+                name: "Đôi Mắt Của Argus",
+                icon: Eye,
+                iconColor: "bg-emerald-500/10 text-emerald-500",
+                title: "Hệ AI Cheat Code",
+                desc: "Mở khóa vĩnh viễn quyền truy cập 'Detailed Mode' (Giải thích cặn kẽ 100%) của Agent 3 trong vòng 24 giờ. Cắn vật phẩm này vào, Bot Socrates sẽ giảng giải tận gốc rễ từ vựng và khái niệm, không bị giới hạn thời gian chờ hay độ ngắn gọn.",
+                lore: "Gai thị của gã khổng lồ trăm mắt, không một chi tiết nào có thể lọt qua. Nhãn lực này đục thấu mọi tri thức ẩn giấu.",
+                cost: 300,
+                bgEffect: "bg-emerald-500",
+                actionText: "Thu nạp nhãn lực",
+                onBuy: () => {
+                  if (user && user.points < 300) {
+                    alert("Chưa đủ điểm Tinh Hoa để sở hữu vật phẩm thần thoại này!");
+                    return;
+                  }
+                  if (store.buyArgusEyes(300)) {
+                    alert("Cặp mắt Argus đã bừng sáng! Bạn được Agent 3 giảng giải tận gốc rễ trong 24 giờ tới.");
+                  }
+                }
+              })}
+              className="glass p-6 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group cursor-pointer"
+            >
+              <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500">
+                    <Eye className="w-6 h-6 animate-pulse" />
+                  </span>
+                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold">
+                    Hệ AI Cheat Code
+                  </span>
+                </div>
+                <h4 className="text-lg font-bold mb-1 text-stone-800 dark:text-stone-200">Đôi Mắt Của Argus (Detailed Mode 24h)</h4>
+                <p className="text-xs opacity-70 mb-4 min-h-[40px]">
+                  Agent 3 sẽ tự động giảng giải siêu chi tiết và sâu sắc mọi kiến thức.
+                </p>
+              </div>
+              <div className="mt-4 pt-4 border-t border-stone-200/50 dark:border-white/5 flex items-center justify-between">
+                <span className="font-extrabold text-base text-emerald-600 dark:text-emerald-400">300 Tinh Hoa</span>
+                <span className="text-[10px] uppercase font-bold text-stone-400">Bấm để xem</span>
+              </div>
+            </div>
+
+            {/* Hệ Buff Siêu Cày Cuốc: Gót Chân Achilles */}
+            <div 
+              onClick={() => setSelectedShopItem({
+                name: "Gót Chân Achilles",
+                icon: ShieldAlert,
+                iconColor: "bg-rose-500/10 text-rose-500",
+                title: "Buff Siêu Cày Cuốc",
+                desc: "Liều ăn nhiều (High Risk High Reward). Trong 2 giờ tới: Làm đúng được nhận x3 XP/Tinh Hoa. Nhưng nếu trả lời SAI dù MỘT câu -> Sập toàn bộ Streak hiện tại hoặc bị trừ thẳng 1 Level!",
+                lore: "Điểm yếu chí mạng đổi lấy sức mạnh vô địch của á thần. Chỉ dành cho những kẻ leo hạng máu lửa và bất khả chiến bại.",
+                cost: 400,
+                bgEffect: "bg-rose-500",
+                actionText: "Hiến tế rủi ro",
+                onBuy: () => {
+                  if (user && user.points < 400) {
+                    alert("Không đủ điểm Tinh Hoa để thực hiện nghi thức này!");
+                    return;
+                  }
+                  if (store.buyAchilles(400)) {
+                    alert("Giao ước máu đã thành lập! 2 giờ tới là lúc bạn chứng tỏ sức vóc của á thần Achilles (XP MỚI ĐƯỢC x3)!");
+                  }
+                }
+              })}
+              className="glass p-6 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group cursor-pointer"
+            >
+              <div className="absolute -top-12 -right-12 w-24 h-24 bg-rose-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="p-3 bg-rose-500/10 rounded-xl text-rose-500">
+                    <ShieldAlert className="w-6 h-6 animate-pulse" />
+                  </span>
+                  <span className="px-3 py-1 bg-rose-500/20 text-rose-700 dark:text-rose-300 rounded-full text-xs font-bold">
+                    Buff Xếp Hạng
+                  </span>
+                </div>
+                <h4 className="text-lg font-bold mb-1 text-stone-800 dark:text-stone-200">Gót Chân Achilles (x3 XP - Tử Thuật)</h4>
+                <p className="text-xs opacity-70 mb-4 min-h-[40px]">
+                  Cày cuốc x3 XP trong 2h, nhưng nếu làm sai flashcard sẽ sập streak hoặc trừ level.
+                </p>
+              </div>
+              <div className="mt-4 pt-4 border-t border-stone-200/50 dark:border-white/5 flex items-center justify-between">
+                <span className="font-extrabold text-base text-rose-600 dark:text-rose-400">400 Tinh Hoa</span>
+                <span className="text-[10px] uppercase font-bold text-stone-400">Bấm để xem</span>
+              </div>
+            </div>
+
             {/* Item 3: Level Up */}
             <div className="glass p-6 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
@@ -5184,6 +5275,80 @@ export default function StudentDashboard() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
       />
+
+      {/* SHOP ITEM MODAL OVERLAY */}
+      <AnimatePresence>
+        {selectedShopItem && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+              onClick={() => setSelectedShopItem(null)}
+            />
+            <motion.div
+              layoutId={`shop-item-${selectedShopItem.title}`}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="relative w-full max-w-lg glass border border-amber-500/20 rounded-3xl overflow-hidden shadow-2xl"
+            >
+              <div className={`absolute top-0 left-0 w-full h-32 opacity-20 blur-3xl ${selectedShopItem.bgEffect}`} />
+              <button 
+                onClick={() => setSelectedShopItem(null)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-stone-200/20 hover:bg-stone-200/40 text-stone-600 dark:text-stone-300 transition z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="p-8 pb-6 flex flex-col items-center text-center relative z-10">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-xl ${selectedShopItem.iconColor}`}>
+                  <selectedShopItem.icon className="w-12 h-12" />
+                </div>
+                
+                <h2 className="text-sm tracking-widest uppercase font-bold text-amber-600 dark:text-amber-500 mb-2">
+                  {selectedShopItem.title}
+                </h2>
+                <h3 className="text-3xl font-display font-black text-stone-800 dark:text-stone-100 mb-6 drop-shadow-sm">
+                  {selectedShopItem.name}
+                </h3>
+                
+                <div className="p-4 bg-stone-100/50 dark:bg-stone-900/50 rounded-2xl border border-stone-200/50 dark:border-stone-700/50 mb-6 w-full text-sm leading-relaxed text-stone-600 dark:text-stone-300 italic">
+                  "{selectedShopItem.lore}"
+                </div>
+
+                <div className="mb-8 w-full text-left bg-blue-500/5 p-4 rounded-xl border border-blue-500/10">
+                  <p className="text-sm font-semibold flex items-start gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span>{selectedShopItem.desc}</span>
+                  </p>
+                </div>
+
+                <div className="w-full flex items-center gap-4">
+                  <div className="flex-1 px-4 py-3 bg-stone-200/30 dark:bg-stone-800/50 rounded-2xl flex flex-col items-center border border-stone-300/30 dark:border-stone-700/30">
+                    <span className="text-[10px] uppercase font-black tracking-wider opacity-60 mb-1">Chi phí đánh đổi</span>
+                    <span className="text-lg font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                      <Flame className="w-5 h-5" />
+                      {selectedShopItem.cost} Tinh Hoa
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      selectedShopItem.onBuy();
+                      setSelectedShopItem(null);
+                    }}
+                    className="flex-1 py-4 px-6 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black rounded-2xl font-black text-sm uppercase tracking-wide shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all hover:scale-105 active:scale-95"
+                  >
+                    {selectedShopItem.actionText}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* HELP / RESTART TOUR FLOATING BUTTON */}
       <button

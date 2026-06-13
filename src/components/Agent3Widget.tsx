@@ -54,45 +54,31 @@ export default function Agent3Widget() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => uuidv4());
-  const [responseMode, setResponseMode] = useState<"socratic" | "direct">(() => {
-    return (localStorage.getItem("agent3_response_mode") as "socratic" | "direct") || "socratic";
+  const [responseMode, setResponseMode] = useState<"socratic" | "direct" | "debate">(() => {
+    return (localStorage.getItem("agent3_response_mode") as "socratic" | "direct" | "debate") || "socratic";
   });
-  const [responseStyle, setResponseStyle] = useState<"concise" | "detailed" | "debate">(() => {
-    return (localStorage.getItem("agent3_response_style") as "concise" | "detailed" | "debate") || "concise";
-  });
-  const [isConciseMode, setIsConciseMode] = useState<boolean>(() => {
-    return localStorage.getItem("agent3_concise_mode") === "true";
+  const [responseLength, setResponseLength] = useState<"concise" | "detailed" | "super_detailed">(() => {
+    return (localStorage.getItem("agent3_response_length") as "concise" | "detailed" | "super_detailed") || "detailed";
   });
   const [showSettings, setShowSettings] = useState(false);
 
-  const handleToggleResponseMode = (mode: "socratic" | "direct") => {
+  const handleToggleResponseMode = (mode: "socratic" | "direct" | "debate") => {
     setResponseMode(mode);
     localStorage.setItem("agent3_response_mode", mode);
     
     // Thêm thông báo đổi chế độ bằng thông điệp trang trọng vào chatbox
-    const noticeText = mode === "direct"
-      ? "⚡ *Hệ thống: Đã chuyển sang chế độ Trực Diện.* Từ giờ tôi sẽ trả lời trực tiếp vấn đề trần trụi với sự tôn trọng, cấm tiệt phương pháp Socrates vòng vo!"
-      : "🤔 *Hệ thống: Đã chuyển sang chế độ Gợi Mở.* Tôi sẽ sử dụng phương pháp triết học vặn vẹo xoắn não để ép ngài phải tự động não suy nghĩ!";
+    let noticeText = "";
+    if (mode === "direct") noticeText = "⚡ *Hệ thống: Đã chuyển sang chế độ Trực Diện.* Từ giờ tôi sẽ trả lời trực tiếp vấn đề trần trụi với sự tôn trọng, cấm tiệt phương pháp Socrates vòng vo!";
+    else if (mode === "debate") noticeText = "⚔️ *Hệ thống: Đã chuyển sang chế độ Tranh Biện.* Tôi sẽ đóng vai kẻ phản biện (Devil's Advocate) gắt gao nhất, sẵn sàng vạch trần mọi sơ hở tư duy của ngài!";
+    else noticeText = "🤔 *Hệ thống: Đã chuyển sang chế độ Gợi Mở.* Tôi sẽ sử dụng phương pháp triết học để ép ngài phải tự động não suy nghĩ!";
     setMessages(prev => [...prev, { role: "ai", text: noticeText }]);
   };
 
-  const handleToggleResponseStyle = (style: "concise" | "detailed" | "debate") => {
-    setResponseStyle(style);
-    localStorage.setItem("agent3_response_style", style);
-    if (style === "detailed") {
-      setIsConciseMode(false);
-      localStorage.setItem("agent3_concise_mode", "false");
-    }
+  const handleToggleResponseLength = (length: "concise" | "detailed" | "super_detailed") => {
+    setResponseLength(length);
+    localStorage.setItem("agent3_response_length", length);
   };
 
-  const handleToggleConciseMode = (val: boolean) => {
-    setIsConciseMode(val);
-    localStorage.setItem("agent3_concise_mode", val ? "true" : "false");
-    if (val) {
-      setResponseStyle("concise");
-      localStorage.setItem("agent3_response_style", "concise");
-    }
-  };
 
   const [existingSets, setExistingSets] = useState<any[]>([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -393,8 +379,7 @@ export default function Agent3Widget() {
           sessionId, 
           mode: "chat",
           responseMode,
-          responseStyle,
-          isConciseMode
+          responseLength: (user && user.argusEyesUntil && user.argusEyesUntil > Date.now()) ? "super_detailed" : responseLength
         })
       });
 
@@ -432,7 +417,7 @@ export default function Agent3Widget() {
     };
     window.addEventListener("trigger-agent3", handleTriggerAgent3);
     return () => window.removeEventListener("trigger-agent3", handleTriggerAgent3);
-  }, [messages, isLoading, cooldownRemaining, sessionId, responseMode, responseStyle, isConciseMode]); // Dependencies needed because executeSend uses them
+  }, [messages, isLoading, cooldownRemaining, sessionId, responseMode, responseLength]); // Dependencies needed because executeSend uses them
 
   return (
     <>
@@ -512,64 +497,49 @@ export default function Agent3Widget() {
                <div className="space-y-3">
                  <div className="flex flex-col gap-1">
                    <span className="text-[10px] font-bold text-stone-600 dark:text-stone-300">
-                     Phong cách trả lời:
+                     Độ chi tiết:
                    </span>
                    <div className="grid grid-cols-3 gap-1 bg-stone-200/55 dark:bg-zinc-800 p-0.5 rounded-lg border border-stone-300/30">
                      <button
-                       onClick={() => handleToggleResponseStyle("concise")}
+                       onClick={() => handleToggleResponseLength("concise")}
                        className={cn(
                          "py-1 rounded text-[10px] font-bold transition-all cursor-pointer",
-                         responseStyle === "concise"
+                         responseLength === "concise"
                            ? "bg-yellow-500 text-black shadow-xs"
                            : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
                        )}
-                       title="Súc tích - Trả lời siêu ngắn gọn, cô đọng"
+                       title="Súc tích - Trả lời 1-3 câu siêu ngắn gọn"
                      >
                        Súc tích
                      </button>
                      <button
-                       onClick={() => handleToggleResponseStyle("detailed")}
+                       onClick={() => handleToggleResponseLength("detailed")}
                        className={cn(
                          "py-1 rounded text-[10px] font-bold transition-all cursor-pointer",
-                         responseStyle === "detailed"
+                         responseLength === "detailed"
                            ? "bg-yellow-500 text-black shadow-xs"
                            : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
                        )}
-                       title="Chi tiết - Giải thích cặn kẽ kèm ví dụ"
+                       title="Chi tiết - Giải thích 200-300 chữ kèm ví dụ"
                      >
                        Chi tiết
                      </button>
                      <button
-                       onClick={() => handleToggleResponseStyle("debate")}
+                       onClick={() => handleToggleResponseLength("super_detailed")}
                        className={cn(
                          "py-1 rounded text-[10px] font-bold transition-all cursor-pointer",
-                         responseStyle === "debate"
+                         responseLength === "debate"
                            ? "bg-yellow-500 text-black shadow-xs"
                            : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
                        )}
-                       title="Tranh biện - Đặt phản biện, thử thách lập luận"
+                       title="Siêu chi tiết - Phân tích sâu sắc cặn kẽ 100%"
                      >
                        Tranh biện
                      </button>
                    </div>
                  </div>
 
-                 <div className="flex items-center justify-between pt-1.5 border-t border-stone-200/50 dark:border-zinc-800">
-                   <div className="flex flex-col leading-tight pr-2">
-                     <span className="text-[10px] font-bold text-stone-600 dark:text-stone-300">
-                       Chế độ Trả lời Ngắn (Concise Mode)
-                     </span>
-                     <span className="text-[9px] opacity-60 leading-normal">
-                       Bỏ qua dông dài dẫn dắt học hỏi ngược lại
-                     </span>
-                   </div>
-                   <input 
-                     type="checkbox" 
-                     checked={isConciseMode}
-                     onChange={(e) => handleToggleConciseMode(e.target.checked)}
-                     className="w-4 h-4 text-yellow-500 accent-yellow-500 cursor-pointer"
-                   />
-                 </div>
+                 
                </div>
              </div>
            )}
@@ -600,9 +570,21 @@ export default function Agent3Widget() {
                     ? "bg-yellow-500 text-black shadow-xs"
                     : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
                 )}
-                title="Trực diện (Direct) - Trả lời thẳng vào câu hỏi, ngắn gọn"
+                title="Trực diện (Direct) - Trả lời thẳng vào câu hỏi trực tiếp"
               >
                 Trực diện ⚡
+              </button>
+              <button
+                onClick={() => handleToggleResponseMode("debate")}
+                className={cn(
+                  "px-2 py-1 rounded text-[10px] font-bold transition-all cursor-pointer",
+                  responseMode === "debate"
+                    ? "bg-yellow-500 text-black shadow-xs"
+                    : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
+                )}
+                title="Tranh biện (Debate) - Đóng vai phản biện sắc bén"
+              >
+                Tranh biện ⚔️
               </button>
             </div>
           </div>

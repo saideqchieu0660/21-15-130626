@@ -7,6 +7,8 @@ const COOLDOWN_DURATION = 10000; // 10 seconds (10000ms)
 export function getAICooldownTimeRemaining(user: User | null): number {
   if (!user || user.role !== "student" || user.isPro) return 0;
   
+  if (user.argusEyesUntil && user.argusEyesUntil > Date.now()) return 0; // Bypass cooldown
+  
   const lastTimeStr = localStorage.getItem(`${COOLDOWN_KEY}_${user.id}`);
   if (!lastTimeStr) return 0;
   
@@ -21,6 +23,7 @@ export function getAICooldownTimeRemaining(user: User | null): number {
 
 export function triggerAICooldown(user: User | null): void {
   if (!user || user.role !== "student" || user.isPro) return;
+  if (user.argusEyesUntil && user.argusEyesUntil > Date.now()) return;
   
   const now = Date.now();
   localStorage.setItem(`${COOLDOWN_KEY}_${user.id}`, now.toString());
@@ -33,7 +36,7 @@ export function useAICooldown(user: User | null) {
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(() => getAICooldownTimeRemaining(user));
 
   useEffect(() => {
-    if (!user || user.role !== "student" || user.isPro) {
+    if (!user || user.role !== "student" || user.isPro || (user.argusEyesUntil && user.argusEyesUntil > Date.now())) {
       setCooldownRemaining(0);
       return;
     }
