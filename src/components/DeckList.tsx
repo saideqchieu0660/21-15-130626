@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { Play, BookOpen, Search, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Play, BookOpen, Search, X, ChevronLeft, ChevronRight, Sparkles, Pin, PinOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Deck, store } from '../lib/store';
 
@@ -60,6 +60,22 @@ const TiltCard = ({ children, delayIdx, className = "" }: { children: React.Reac
 };
 
 export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onCategoryQuiz }: DeckListProps) => {
+  const currentUser = store.getCurrentUser();
+  const [pinnedDecks, setPinnedDecks] = useState<string[]>(() => {
+    const saved = localStorage.getItem(`pinned_decks_${currentUser?.id || 'guest'}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const togglePin = (deckId: string) => {
+    setPinnedDecks(prev => {
+      const newPinned = prev.includes(deckId) 
+        ? prev.filter(id => id !== deckId) 
+        : [...prev, deckId];
+      localStorage.setItem(`pinned_decks_${currentUser?.id || 'guest'}`, JSON.stringify(newPinned));
+      return newPinned;
+    });
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"default" | "newest" | "oldest" | "az" | "za">("default");
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -111,18 +127,36 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
       result.sort((a, b) => b.title.localeCompare(a.title, 'vi'));
     }
 
+    // Always sort pinned items to the top if not grouping by subject
+    // (If grouping, they are shown in a pinned section)
+    result.sort((a, b) => {
+      const aPinned = pinnedDecks.includes(a.id);
+      const bPinned = pinnedDecks.includes(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      return 0;
+    });
+
     return result;
-  }, [decks, searchQuery, sortOrder]);
+  }, [decks, searchQuery, sortOrder, pinnedDecks]);
 
   const groupedDecks = useMemo(() => {
-    return sortedAndFilteredDecks.reduce((acc, deck) => {
+    const groups: Record<string, Deck[]> = {};
+    
+    sortedAndFilteredDecks.forEach((deck) => {
+      if (pinnedDecks.includes(deck.id)) {
+        if (!groups["📌 ĐÃ GHIM"]) groups["📌 ĐÃ GHIM"] = [];
+        groups["📌 ĐÃ GHIM"].push(deck);
+      }
+      
       const subj = String(deck?.subject || "Tự chọn").trim();
-      const normalizedSubj = subj.toUpperCase(); // Normalize for consistent grouping titles
-      if (!acc[normalizedSubj]) acc[normalizedSubj] = [];
-      acc[normalizedSubj].push(deck);
-      return acc;
-    }, {} as Record<string, Deck[]>);
-  }, [sortedAndFilteredDecks]);
+      const normalizedSubj = subj.toUpperCase();
+      if (!groups[normalizedSubj]) groups[normalizedSubj] = [];
+      groups[normalizedSubj].push(deck);
+    });
+
+    return groups;
+  }, [sortedAndFilteredDecks, pinnedDecks]);
 
   const getCreatorLabel = (d: Deck) => {
     const systemDecks = ["deck_1", "deck_phil_2", "deck_math_1", "deck_math_2", "deck_physics_1", "deck_physics_2", "daily-quest", "remind-later-deck"];
@@ -205,7 +239,11 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
         {sortedAndFilteredDecks.length > 0 ? (
           groupBySubject ? (
             <div className="space-y-16">
-              {Object.entries(groupedDecks).map(([subject, subjectDecks]) => (
+              {Object.entries(groupedDecks).sort(([subjectA], [subjectB]) => {
+                if (subjectA === "📌 ĐÃ GHIM") return -1;
+                if (subjectB === "📌 ĐÃ GHIM") return 1;
+                return subjectA.localeCompare(subjectB);
+              }).map(([subject, subjectDecks]) => (
                 <div key={subject} className="space-y-8 animate-in fade-in duration-300">
                   {/* Category Header Bar with Horizontal Control Buttons */}
                   <div className="flex items-center justify-between gap-4 border-b border-amber-500/20 dark:border-zinc-800/60 pb-4">
@@ -269,8 +307,17 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
 
                       return (
                         <TiltCard key={deck.id} delayIdx={idx} className="w-[85vw] sm:w-[380px] shrink-0 snap-start h-auto">
-                          <div className="relative z-10 flex flex-col h-full [transform:translateZ(30px)]">
-                            <h4 className="font-extrabold text-2xl sm:text-3xl mb-3 group-hover:text-amber-500 transition-colors line-clamp-2 break-all break-words leading-relaxed">{deck.title}</h4>
+                          <div className="absolute top-4 right-4 z-20">
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePin(deck.id); }}
+                              className={`p-2 rounded-full transition-colors ${pinnedDecks.includes(deck.id) ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'}`}
+                              title={pinnedDecks.includes(deck.id) ? 'Bỏ ghim' : 'Ghim danh sách này'}
+                            >
+                              {pinnedDecks.includes(deck.id) ? <Pin className="w-5 h-5 fill-current" /> : <Pin className="w-5 h-5" />}
+                            </button>
+                          </div>
+                          <div className="relative z-10 flex flex-col h-full [transform:translateZ(30px)] pt-2">
+                            <h4 className="font-extrabold text-2xl sm:text-3xl mb-3 pr-10 group-hover:text-amber-500 transition-colors line-clamp-2 break-all break-words leading-relaxed">{deck.title}</h4>
                             
                             <div className="flex flex-wrap items-center gap-4 mb-8">
                               <span className="text-base sm:text-l font-mono font-black opacity-85 uppercase tracking-widest leading-relaxed">{deck.subject || "Tự chọn"}</span>
@@ -316,8 +363,17 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
                 return (
                   <TiltCard key={deck.id} delayIdx={idx}>
                     {/* Animated gradient border pseudo-element effect already handled by .card-3d layer logic */}
-                    <div className="relative z-10 flex flex-col h-full [transform:translateZ(30px)]">
-                      <h4 className="font-extrabold text-2xl sm:text-3xl mb-3 group-hover:text-amber-500 transition-colors line-clamp-2 break-all break-words leading-relaxed">{deck.title}</h4>
+                    <div className="absolute top-4 right-4 z-20">
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePin(deck.id); }}
+                        className={`p-2 rounded-full transition-colors ${pinnedDecks.includes(deck.id) ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'}`}
+                        title={pinnedDecks.includes(deck.id) ? 'Bỏ ghim' : 'Ghim danh sách này'}
+                      >
+                        {pinnedDecks.includes(deck.id) ? <Pin className="w-5 h-5 fill-current" /> : <Pin className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    <div className="relative z-10 flex flex-col h-full [transform:translateZ(30px)] pt-2">
+                      <h4 className="font-extrabold text-2xl sm:text-3xl mb-3 pr-10 group-hover:text-amber-500 transition-colors line-clamp-2 break-all break-words leading-relaxed">{deck.title}</h4>
                       
                       <div className="flex flex-wrap items-center gap-4 mb-8">
                         <span className="text-base sm:text-xl font-mono font-black opacity-85 uppercase tracking-widest leading-relaxed">{deck.subject || "Tự chọn"}</span>
